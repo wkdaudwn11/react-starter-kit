@@ -1,0 +1,67 @@
+const webpack = require('webpack');
+const path = require('path');
+const HtmlWebPackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+module.exports = {
+  name: 'build',
+  devtool: isProduction ? 'hidden-source-map' : 'eval',
+  mode: isProduction ? 'production' : 'development',
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    alias: {
+      components: path.resolve(__dirname, '../src/components'),
+      pages: path.resolve(__dirname, '../src/pages'),
+      types: path.resolve(__dirname, '../src/types'),
+      lib: path.resolve(__dirname, '../src/lib'),
+      hooks: path.resolve(__dirname, '../src/hooks'),
+      data: path.resolve(__dirname, '../src/data'),
+    },
+  },
+  entry: {
+    app: path.join(path.resolve(__dirname, '..'), 'src', 'index'),
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              plugins: [!isProduction && 'react-refresh/babel'].filter(Boolean),
+            },
+          },
+        ].filter(Boolean),
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.css$/,
+        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+      },
+    ],
+  },
+  plugins: [
+    new webpack.LoaderOptionsPlugin({ dev: !isProduction }),
+    new HtmlWebPackPlugin({
+      template: 'src/index.html',
+      filename: '../index.html',
+    }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: 'public',
+          to: path.join(path.resolve(__dirname, '../'), 'out'),
+        },
+      ],
+    }),
+  ],
+  output: {
+    filename: '[name].js',
+    path: path.join(path.resolve(__dirname, '..'), 'out', 'dist'),
+    publicPath: './dist/',
+    clean: true,
+  },
+};
